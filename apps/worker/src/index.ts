@@ -145,7 +145,7 @@ async function processTask(startTime:number,data:any) {
 
 
 const  handler  = new Worker(
-    process.env.QueueName||"default",
+    process.env.QUEUE_NAME as string,
     async (job: Job)=>{
         const startTime = performance.now();
         await processTask(startTime,job.data);
