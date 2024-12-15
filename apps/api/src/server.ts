@@ -2,7 +2,8 @@ import { json, urlencoded } from "body-parser";
 import express, { type Express } from "express";
 import morgan from "morgan";
 import cors from "cors";
-import indexRouter from "./routes/index";
+import indexv1Router from "./routes/v1/index";
+import indexv2Router from "./routes/v2/index";
 import dotenv from "dotenv"
 export const createServer = (): Express => {
   dotenv.config()
@@ -13,7 +14,8 @@ export const createServer = (): Express => {
     .use(urlencoded({ extended: true }))
     .use(json())
     .use(cors())
-    .use("/api/v1",indexRouter)
+    .use("/api/v1",indexv1Router)
+    .use("/api/v2",indexv2Router)
 
   return app;
 };
