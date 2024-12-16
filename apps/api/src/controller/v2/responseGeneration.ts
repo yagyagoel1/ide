@@ -22,7 +22,7 @@ export const responseGenerated = asyncHandler(async(req:Request,res:Response)=>{
             return res.status(400).json(new ApiResponse(400, "something went wrong", ));
         }
         else{
-            return res.status(200).json(new ApiResponse(200, "Submission completed", data));
+            return res.status(200).json(new ApiResponse(200, "Submission completed", JSON.parse(data)));
         }
 
     }

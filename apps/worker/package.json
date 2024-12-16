@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "node dist/bundle.js",
+    "build": "esbuild src/index.ts --bundle --platform=node --outfile=dist/bundle.js --external:",
+    "start": "node dist/bundle.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,6 +17,12 @@
     "axios": "^1.7.9",
     "bullmq": "^5.34.2",
     "dotenv": "^16.4.7",
-    "fs": "0.0.1-security"
+    "fs": "0.0.1-security",
+    "tsup": "^8.0.2"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "esbuild": "^0.24.0",
+    "typescript": "5.5.4"
   }
 }

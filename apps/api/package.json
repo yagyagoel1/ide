@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node dist/index.js",
-    "dev": "tsup --watch --onSuccess \"node dist/index.js\"",
-    "build": "tsup",
+    "dev": "node dist/bundle.js",
+    "build": "esbuild src/index.ts --bundle --platform=node --outfile=dist/bundle.js --external:",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",

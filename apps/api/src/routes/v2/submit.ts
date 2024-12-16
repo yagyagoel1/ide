@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { createSubmission } from "../../controller/createSubmission";
-import { responseGenerated } from "../../controller/responseGenereated";
+import { responseGenerated } from "../../controller/v2/responseGeneration";
+import { createSubmission } from "../../controller/v2/createSubmission";
 
 
 

@@ -6,14 +6,21 @@ import dotenv from 'dotenv';
 import axios from 'axios';
 
 dotenv.config()
-async function processTask(startTime:number,data:any) {
-    let dockerData="",dockerError="";
-    const userInput = data.userInput;
+function truncateOutput(output: string, maxLength: number): string {
+    if (output.length > maxLength) {
+        return output.slice(0, maxLength) + "\n[...output truncated]";
+    }
+    return output;
+}
+
+async function processTask(startTime: number, data: any) {
+    let dockerData = "", dockerError = "";
+    const userInput = data.input;
     const { taskId, code, language } = {
-        code:data.code,
+        code: data.code,
         language: data.language,
         taskId: data.taskId
-    }
+    };
 
     const image = language === 'python' ? 'python:3.11-slim' : 'node:20';
     const filePath = `/tmp/${taskId}.txt`;
@@ -21,7 +28,8 @@ async function processTask(startTime:number,data:any) {
     fs.writeFileSync(filePath, code);
 
     let dockerCommand;
-    let containerName="task_"+taskId
+    const containerName = "task_" + taskId;
+
     if (image === "node:20") {
         dockerCommand = [
             "run",
@@ -62,93 +70,98 @@ async function processTask(startTime:number,data:any) {
         ];
     }
 
-
-    const dockerProcess = spawn("docker",dockerCommand);
-
+    const dockerProcess = spawn("docker", dockerCommand);
 
     dockerProcess.stdin.write(userInput);
-    dockerProcess.stdin.end();  
-
+    dockerProcess.stdin.end();
 
     dockerProcess.stdout.on('data', (data) => {
-        dockerData +=data
-        console.log(`output ${data}`);
+        dockerData += data;
     });
 
     dockerProcess.stderr.on('data', (data) => {
-        dockerError+=data
-        console.error(`err ${data}`);
+        dockerError += data;
     });
 
-    const timeout = 20000; 
+    const timeout = 10000;
     const timeoutHandler = setTimeout(() => {
-        console.error("timeout ho gya docker....");
+        console.error("Docker timeout occurred.");
         exec(`docker stop ${containerName}`, (err, stdout, stderr) => {
-          if (err) {
-            
-              console.error(`faield ${containerName}: ${stderr}`);
-          } else {
-                
-              console.log(`container ${containerName} stop`);
-          }
-
-      });
-      dockerError +="timeout"
-        ///push the data to the webhook if the webhook fails then push it to the failed queue
-
-    
-
-    }, timeout);
-
-    dockerProcess.on('close', (code) => {
-        clearTimeout(timeoutHandler); 
-        if(code==null){
-          exec(`docker stop ${containerName}`, (err, stdout, stderr) => {
             if (err) {
-                console.error(`Failed to stop ${containerName}: ${stderr}`);
+                console.error(`Failed to stop container ${containerName}: ${stderr}`);
             } else {
-                console.log(`container stopped ${containerName} `);
+                console.log(`Container ${containerName} stopped due to timeout.`);
             }
         });
-        }
-        dockerData +="exited"
-        console.log(`Ddocker exit code ${code}`);
-        console.log(performance.now()-startTime)
-                ///push the data to the webhook if the webhook fails then push it to the failed queue
+        dockerError += "Timeout";
+    }, timeout);
 
+    return new Promise<void>((resolve, reject) => {
+        dockerProcess.on('close', async (code) => {
+            clearTimeout(timeoutHandler);
+            if (code === null) {
+                exec(`docker stop ${containerName}`, (err, stdout, stderr) => {
+                    if (err) {
+                        console.error(`Failed to stop container ${containerName}: ${stderr}`);
+                    } else {
+                        console.log(`Container ${containerName} stopped.`);
+                    }
+                });
+            }
+
+            console.log(`Docker exit code: ${code}`);
+            console.log(`Execution time: ${performance.now() - startTime}ms`);
+
+            const maxLength = 5000; 
+            const truncatedDockerData = truncateOutput(dockerData, maxLength);
+            const truncatedDockerError = truncateOutput(dockerError, maxLength);
+
+            try {
+                await axios.post(
+                    `${process.env.BASE_URL}/basic/rediswebhook`,
+                    {
+                        taskId,
+                        code,
+                        language,
+                        userInput,
+                        dockerData: truncatedDockerData,
+                        dockerError: truncatedDockerError,
+                        time: performance.now() - startTime,
+                    },
+                    {
+                        headers: {
+                            Authorization: `${process.env.TOKEN}`,
+                        },
+                    }
+                );
+                resolve();
+            } catch (error) {
+                if (error instanceof Error) {
+                    console.error(error.message);
+                } else {
+                    console.error("Unknown error occurred:", error);
+                }
+                reject(error);
+            }
+        });
+
+        dockerProcess.on('error', (error) => {
+            clearTimeout(timeoutHandler);
+            console.error("Docker process error:", error);
+            reject(error);
+        });
     });
-   try {
-     const response = await  axios.post(`${process.env.BASE_URL}/webhook`,{
-         taskId,
-         code,
-         language,
-         userInput,
-         dockerData,
-         dockerError,
-         time:performance.now()-startTime,
-         
-     },{
-         headers:{
-             Authorization : `${process.env.TOKEN}`
-         }
-     })
-   } catch (error) {
-    if (error instanceof Error) {
-        console.error(error.message);
-    } else {
-        console.error("Unknown error occurred:", error);
-    } 
-    //push to queue   
-   }
-
 }
+
+
 
 
 const  handler  = new Worker(
     process.env.QUEUE_NAME as string,
     async (job: Job)=>{
+          const data = job.data
         const startTime = performance.now();
-        await processTask(startTime,job.data);
+        await processTask(startTime,data);
 
     },{
         connection:redisConnection,
@@ -166,5 +179,6 @@ handler.on("completed", (job:Job) => {
     console.log(`Job with id ${job.id} has been completed`);
   });
   handler.on("failed", (job, error:Error) => {
+    console.log(error)
     console.log(`Job with id ${job?.id} has failed with error ${error.message}`);
   });   

@@ -5,7 +5,9 @@ import { ApiResponse } from "../../utils/apiResponse";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { setData } from "../../utils/redis";
 
+import dotenv from "dotenv"
 
+dotenv.config();
 export const redisWebhook= asyncHandler(async(req:Request,res:Response)=>{  
 const {
     taskId,
@@ -18,7 +20,7 @@ const {
     
 } = req.body;
 //change this to something secure
-if(process.env.TOKEN !== req.headers.Authorization){
+if(process.env.TOKEN !== req.headers.authorization){
     return res.status(401).json(new ApiResponse(401, "Unauthorized", ));
 }
 
