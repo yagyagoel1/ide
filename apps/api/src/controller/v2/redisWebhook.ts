@@ -26,9 +26,9 @@ if(process.env.TOKEN !== req.headers.authorization){
 
 //zod validation
 
-if (!taskId || !code || !language || !userInput || !dockerData || !dockerError || !time) {
-    return res.status(400).json(new ApiResponse(400, "Invalid data", ));
-}
+// if (!taskId || !code || !language || !userInput || !dockerData || !dockerError || !time) {
+//     return res.status(400).json(new ApiResponse(400, "Invalid data", ));
+// }
 await setData(taskId, {
     code,
     language,

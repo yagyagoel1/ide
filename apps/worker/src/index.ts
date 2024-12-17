@@ -71,10 +71,10 @@ async function processTask(startTime: number, data: any) {
     }
 
     const dockerProcess = spawn("docker", dockerCommand);
-
+    if(userInput){
     dockerProcess.stdin.write(userInput);
     dockerProcess.stdin.end();
-
+    }
     dockerProcess.stdout.on('data', (data) => {
         dockerData += data;
     });

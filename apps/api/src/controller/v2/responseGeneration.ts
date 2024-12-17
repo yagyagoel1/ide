@@ -10,7 +10,7 @@ export const responseGenerated = asyncHandler(async(req:Request,res:Response)=>{
 //Returns one of these values: 'completed', 'failed', 'delayed', 'active', 'waiting', 'waiting-children', 'unknown'.
     const data = await getJobStatus(token);
     if(data=="failed"){
-        return res.status(400).json(new ApiResponse(400, "Submission failed", ));
+        return res.status(200).json(new ApiResponse(400, "Submission failed", data));
     }
     else if(data=="waiting" || data=="waiting-children" || data=="active" || data=="delayed"){
         return res.status(200).json(new ApiResponse(200, "Submission in progress", ));
@@ -27,7 +27,7 @@ export const responseGenerated = asyncHandler(async(req:Request,res:Response)=>{
 
     }
     else{
-        return res.status(400).json(new ApiResponse(400, "Submission failed", ));
+        return res.status(200).json(new ApiResponse(400, "Submission failed", ));
     }
 
 
