@@ -13,7 +13,9 @@ export const createServer = (): Express => {
     .use(morgan("dev"))
     .use(urlencoded({ extended: true }))
     .use(json())
-    .use(cors())
+    .use(cors({
+      origin:"*"
+    }))
     .use("/api/v1",indexv1Router)
     .use("/api/v2",indexv2Router)
 

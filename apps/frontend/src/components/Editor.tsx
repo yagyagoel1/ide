@@ -24,13 +24,13 @@ export default function CodeEditor() {
     console.log('Running code:', payload);
     toast.success('Running code...');
     try{
-    const response = await axios.post(`http://localhost:5001/api/v2/submissions/create`, payload);
+    const response = await axios.post(`https://bf5c-2401-4900-1c61-29e7-4a24-a0f9-a049-5db2.ngrok-free.app/api/v2/submissions/create`, payload);
     console.log('Response:', response.data);
     const taskId = response.data.data;
     // Poll the API to get the status of the job
     const interval = setInterval(async () => {
       try{
-      const statusResponse = await axios.post(`http://localhost:5001/api/v2/submissions/isdone`,{token:taskId});
+      const statusResponse = await axios.post(`https://bf5c-2401-4900-1c61-29e7-4a24-a0f9-a049-5db2.ngrok-free.app/api/v2/submissions/isdone`,{token:taskId});
       console.log('Status:', statusResponse.data);
       if (statusResponse.data.message === 'Submission completed') {
         clearInterval(interval);
